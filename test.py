@@ -58,13 +58,13 @@ class Test(TestInterface):
 
             with h5py.File(arqv, 'r') as f:
                 try:
-                    size = list(f['size'])
-                    steps = fix_list(f['steps'])
-                    val = np.array(f['validation'])
+                    return [
+                        list(f['size']), 
+                        fix_list(f['steps']), 
+                        np.array(f['validation'])
+                    ]
                 except Exception:
                     return []
-
-            return [size, steps, val]
 
         if (type(arqv) != str):
             raise ValueError('Param must be a string that leads to a valid directory.')
