@@ -38,7 +38,7 @@ class Tester():
         sleep(0.25)
 
     @staticmethod
-    def _validate_result(base_img: np.array, new_img: np.array) -> float:
+    def _validate_result(base_img: np.array) -> float:
         def clear_screen():
             if os.name == 'nt': # Windows
                 os.system('cls') 
@@ -47,8 +47,8 @@ class Tester():
 
         sleep(4)
         clear_screen()
+        new_img = ImageGrab.grab()
         base_img = Image.fromarray(base_img)
-        new_img = Image.fromarray(new_img)
         return compare_ssim(base_img, new_img)
 
     @staticmethod
@@ -74,4 +74,4 @@ class Tester():
             elif instruction[0] == 3:
                 Tester._keyboard_type(instruction[1])
 
-        return Tester._validate_result(test.validation, np.array(ImageGrab.grab()))
+        return Tester._validate_result(test.validation)
