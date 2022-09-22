@@ -36,7 +36,7 @@ class TestInterface(metaclass = TestMeta):
 
 class Test(TestInterface):  
     """
-    Class which will hold all steps and validation for a given test.
+    Class which holds all the steps and validation for a given test.
     """  
     def __init__(self, arqv: str) -> None:
         def load_data(arqv: str) -> list:
