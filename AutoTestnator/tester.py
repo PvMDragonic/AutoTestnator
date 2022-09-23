@@ -20,39 +20,35 @@ class Tester():
     keyboard = pynput.keyboard.Controller()
 
     @staticmethod
-    def _move_mouse(x: int, y: int) -> None:
-        Tester.mouse.position = (x, y)
-        sleep(1)
-
-    @staticmethod
-    def _click_mouse(button: int) -> None:
-        if button == 1:
-            Tester.mouse.click(pynput.mouse.Button.left, 1)
-        elif button == 2:
-            Tester.mouse.click(pynput.mouse.Button.right, 1)
-        sleep(1)
-
-    @staticmethod
-    def _keyboard_type(key: str) -> None:
-        Tester.keyboard.tap(key)
-        sleep(0.25)
-
-    @staticmethod
-    def _validate_result(base_img: np.array) -> float:
-        def clear_screen():
-            if os.name == 'nt': # Windows
-                os.system('cls') 
-            else:
-                os.system('clear') # Linux/Mac
-
-        sleep(4)
-        clear_screen()
-        new_img = ImageGrab.grab()
-        base_img = Image.fromarray(base_img)
-        return compare_ssim(base_img, new_img)
-
-    @staticmethod
     def execute(test: Test) -> float:
+        def move_mouse(x: int, y: int) -> None:
+            Tester.mouse.position = (x, y)
+            sleep(1)
+
+        def click_mouse(button: int) -> None:
+            if button == 1:
+                Tester.mouse.click(pynput.mouse.Button.left, 1)
+            elif button == 2:
+                Tester.mouse.click(pynput.mouse.Button.right, 1)
+            sleep(1)
+
+        def keyboard_type(key: str) -> None:
+            Tester.keyboard.tap(key)
+            sleep(0.25)
+
+        def validate_result(base_img: np.array) -> float:
+            def clear_screen():
+                if os.name == 'nt': # Windows
+                    os.system('cls') 
+                else:
+                    os.system('clear') # Linux/Mac
+
+            sleep(4)
+            clear_screen()
+            new_img = ImageGrab.grab()
+            base_img = Image.fromarray(base_img)
+            return compare_ssim(base_img, new_img)
+
         def invalid_screen_size(test_screen: list) -> bool:
             current_screen = screeninfo.get_monitors()[0]
             if test_screen[0] == current_screen.width and test_screen[1] == current_screen.height:
@@ -64,14 +60,14 @@ class Tester():
     
         if invalid_screen_size(test.screen):
             raise IncompatibleMonitor("Your monitor resolution is incompatible with the test's resolution.")
-
+        
         print('>> Test started.')
         for instruction in test.steps:
             if instruction[0] == 1:
-                Tester._move_mouse(instruction[1], instruction[2])
+                move_mouse(instruction[1], instruction[2])
             elif instruction[0] == 2:
-                Tester._click_mouse(instruction[1])
+                click_mouse(instruction[1])
             elif instruction[0] == 3:
-                Tester._keyboard_type(instruction[1])
+                keyboard_type(instruction[1])
 
-        return Tester._validate_result(test.validation)
+        return validate_result(test.validation)
