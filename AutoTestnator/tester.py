@@ -30,10 +30,17 @@ class Tester():
                 Tester.mouse.click(pynput.mouse.Button.left, 1)
             elif button == 2:
                 Tester.mouse.click(pynput.mouse.Button.right, 1)
+            elif button == 3:
+                Tester.mouse.click(pynput.mouse.Button.middle, 1)
             sleep(1)
 
         def keyboard_type(key: str) -> None:
-            Tester.keyboard.tap(key)
+            try:
+                Tester.keyboard.tap(key)
+            except (TypeError, ValueError):
+                # Letters and actual buttons on the kb have different formatting, 
+                # so it'll get here if it's not a letter.
+                Tester.keyboard.tap(getattr(pynput.keyboard.Key, key))
             sleep(0.25)
 
         def validate_result(base_img: np.array) -> float:
@@ -60,7 +67,7 @@ class Tester():
     
         if invalid_screen_size(test.screen):
             raise IncompatibleMonitor("Your monitor resolution is incompatible with the test's resolution.")
-        
+
         print('>> Test started.')
         for instruction in test.steps:
             if instruction[0] == 1:
