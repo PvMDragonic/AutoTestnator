@@ -11,9 +11,12 @@ Mouse and keyboard recording and manipulation are handled by [pynput](https://py
 
 ## Features
 - Record test instructions into a hdf5 file;
-    - Mouse clicks;
+    - Mouse right clicks;
+    - Mouse left clicks;
+    - Mouse middle clicks;
     - Mouse position when clicking;
-    - Keyboard letters.
+    - Keyboard letters;
+    - Keyboard keys.
 - Read test instructions from hdf5 files;
 - Show information saved on a test file;
 - Execute tests from hdf5 files;

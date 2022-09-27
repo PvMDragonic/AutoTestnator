@@ -9,5 +9,5 @@ __all__ = [
 ]
 
 __author__ = "João Pedro Droval"
-__date__ = "23 September 2022"
-__version__ = "1.2"
+__date__ = "27 September 2022"
+__version__ = "1.3"

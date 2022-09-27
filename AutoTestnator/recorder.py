@@ -10,6 +10,9 @@ class Recorder():
     Class responsible for recording the tests into a Test class compatible file.
     """
     recording = False
+    record_listener = None
+    mouse_listener = None
+    kb_listener = None
     steps = []
 
     @staticmethod
@@ -26,36 +29,70 @@ class Recorder():
                     Recorder.steps.append(['2', '1', '-1'])
                 elif button == mouse.Button.right:
                     Recorder.steps.append(['2', '2', '-1'])
+                elif button == mouse.Button.middle:
+                    Recorder.steps.append(['2', '3', '-1'])
 
         def keyboard_handler(key):
-            if key == keyboard.Key.f12:
-                Recorder.recording = not Recorder.recording
-
-                if Recorder.recording == True:
-                    print("-> Recording started!")
-                    return
-                else:
-                    return False
-            if key == keyboard.Key.enter:
-                return False
-            if key in dir(keyboard.Key):
-                return
             if not Recorder.recording:
                 return
 
-            Recorder.steps.append(['3', str(key), '-1'])
+            if isinstance(key, keyboard.Key):
+                Recorder.steps.append(['3', key._name_, '-1'])
+            elif isinstance(key, keyboard.KeyCode):
+                Recorder.steps.append(['3', key.char, '-1'])
 
-        print("Press 'Enter' to cancel the recording;")
-        print("Press 'F12' to begin or finish the test's recording.\n\nAll your actions will be recorded for future use.")
+        def start_recording():
+            if Recorder.recording:
+                Recorder.recording = False
+                Recorder.record_listener.stop()
+                return
 
-        mouse.Listener(
+            Recorder.mouse_listener.start()
+            Recorder.kb_listener.start()
+            Recorder.recording = True
+            print("-> Recording started!")
+        
+        def cancel_recording():     
+            Recorder.recording = False    
+            Recorder.steps = []
+            Recorder.record_listener.stop()
+
+        print("\nAll your actions will be recorded for future replication.\n")
+        print("Commands:")
+        print(">> 'Ctrl Alt C' to cancel the recording;")
+        print(">> 'Ctrl Alt R' to begin and finish the recording.\n")
+
+        Recorder.mouse_listener = mouse.Listener(
             on_click = mouse_handler
-        ).start()
+        )
+
+        Recorder.kb_listener = keyboard.Listener(
+            on_press = keyboard_handler
+        ) 
+
+        hotkey1 = keyboard.HotKey(
+            keyboard.HotKey.parse('<ctrl>+<alt>+c'),
+            cancel_recording
+        )
+
+        hotkey2 = keyboard.HotKey(
+            keyboard.HotKey.parse('<ctrl>+<alt>+r'),
+            start_recording
+        )
+
+        keyboard.Listener(
+            on_press=lambda k: hotkey1.press(Recorder.record_listener.canonical(k)),
+            on_release=lambda k: hotkey1.release(Recorder.record_listener.canonical(k))
+        ).start() 
 
         with keyboard.Listener(
-            on_press = keyboard_handler
-        ) as listener:
-            listener.join() # Holds code execution until recording is canceled or finished.
+            on_press=lambda k: hotkey2.press(Recorder.record_listener.canonical(k)),
+            on_release=lambda k: hotkey2.release(Recorder.record_listener.canonical(k))
+        ) as Recorder.record_listener:
+            Recorder.record_listener.join() # Holds code execution until recording is canceled or finished.
+
+        Recorder.mouse_listener.stop()
+        Recorder.kb_listener.stop() 
 
         if Recorder.steps:
             monitor = screeninfo.get_monitors()[0]
@@ -70,3 +107,5 @@ class Recorder():
                 f.create_dataset("size", data = size)
                 f.create_dataset("steps", data = Recorder.steps)
                 f.create_dataset("validation", data = validation)
+            
+            Recorder.steps = []
