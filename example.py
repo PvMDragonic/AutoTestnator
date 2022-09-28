@@ -6,11 +6,11 @@ import screeninfo
 import glob
 import os
 
+def invalid_option():
+    print("\n>> Invalid option; insert a valid number!\n")
+
 def clear_console():
-    if os.name == 'nt': # Windows
-        os.system('cls') 
-    else:
-        os.system('clear') # Linux/Mac
+    os.system('cls||clear')
 
 def welcome_message():
     clear_console()
@@ -23,11 +23,31 @@ def welcome_message():
 
 def recording():
     clear_console()
-    Recorder.record()
+    print("Press 'Enter' to return.\n")
+    print("Select a test type:")
+    print(">> '1' - Webpage;")
+    print(">> '2' - Other;")
+
+    while True:
+        opc = input()
+        if opc == '1':
+            url = input("> Insert the URL to be tested: ")
+            if url == "":
+                print("\n>> URL can't be empty! Type a valid URL.\n")
+                continue
+            Recorder().record(url)
+            return
+        elif opc == '2':
+            Recorder().record()
+            return
+        elif opc == "":
+            return
+        else:
+            invalid_option()
 
 def execution():
     def list_files():
-        print("'Enter' to return.\n")
+        print("Press 'Enter' to return.\n")
         print(">> Select your file:")
         files = glob.glob('*.hdf5')
         for index, elem in enumerate(files):
@@ -39,7 +59,7 @@ def execution():
                 opt = int(opt)
 
                 if opt > len(files) or opt < 0:
-                    print(">> Select a valid option!")
+                    invalid_option()
                     continue
 
                 return files[opt - 1]
@@ -47,7 +67,7 @@ def execution():
                 if opt == "": # If pressed 'Enter'.
                     return None
 
-                print(">> Select a valid option!")
+                invalid_option()
  
     clear_console()
     file = list_files()
@@ -74,17 +94,13 @@ if __name__ == "__main__":
     welcome_message()
 
     while True:
-        try:
-            opt = int(input())
-        except ValueError:
-            print("\n>> Invalid number!")
+        opc = input()
+        if opc == '1':
+            recording()
+        elif opc == '2':
+            execution()
+        else:
+            invalid_option()
             continue
 
-        if opt == 1:
-            recording()
-            welcome_message()
-        elif opt == 2:
-            execution()
-            welcome_message()
-        else:
-            print("\n>> Invalid option; insert a valid number!\n")
+        welcome_message()
