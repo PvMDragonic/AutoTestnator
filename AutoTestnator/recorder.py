@@ -1,6 +1,7 @@
 from pynput import mouse, keyboard
 from PIL import ImageGrab
 
+import webbrowser, time
 import numpy as np
 import screeninfo
 import h5py
@@ -16,7 +17,7 @@ class Recorder():
     steps = []
 
     @staticmethod
-    def record():
+    def record(url = None):
         def mouse_handler(x, y, button, pressed):
             if not Recorder.recording:
                 return
@@ -41,19 +42,27 @@ class Recorder():
             elif isinstance(key, keyboard.KeyCode):
                 Recorder.steps.append(['3', key.char, '-1'])
 
-        def start_recording():
+        def start_recording(url):
             if Recorder.recording:
                 Recorder.recording = False
                 Recorder.record_listener.stop()
                 return
+
+            if url:
+                webbrowser.open(url)
+                time.sleep(1)
+                keyboard.Controller().tap(keyboard.Key.f11)
+
+                Recorder.steps.append(['4', url, '-1'])
+                Recorder.steps.append(['3', 'f11', '-1'])
 
             Recorder.mouse_listener.start()
             Recorder.kb_listener.start()
             Recorder.recording = True
             print("-> Recording started!")
         
-        def cancel_recording():     
-            Recorder.recording = False    
+        def cancel_recording():    
+            Recorder.recording = False 
             Recorder.steps = []
             Recorder.record_listener.stop()
 
@@ -77,7 +86,7 @@ class Recorder():
 
         hotkey2 = keyboard.HotKey(
             keyboard.HotKey.parse('<ctrl>+<alt>+r'),
-            start_recording
+            lambda: start_recording(url)
         )
 
         keyboard.Listener(

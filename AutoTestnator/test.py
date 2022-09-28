@@ -51,8 +51,8 @@ class Test(TestInterface):
                     elif arr[0] == b'2':
                         temp = [int(arr[0]), int(arr[1])]
                         lst.append(temp)
-                    elif arr[0] == b'3':
-                        temp = [int(arr[0]), str(arr[1], 'UTF-8')[1]]
+                    elif arr[0] in (b'3', b'4'):
+                        temp = [int(arr[0]), str(arr[1], 'UTF-8')]
                         lst.append(temp)
                 return lst
 

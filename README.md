@@ -23,9 +23,10 @@ Mouse and keyboard recording and manipulation are handled by [pynput](https://py
 - Show endscreen similarity to what it should be, based on result during recording.
 
 ## Usage
-The recording can be started by calling:
+The recording can be started by calling, which takes the optional argument `url`:
 ```
     Recorder().record()
+    Recorder().record('www.google.com')
 ```
 
 The execution of a recorded test can be started by first instantiating a Test object, which recieves the path to a test.hdf5 file as argument. Then, you pass the test object to the Tester's `execute()` method:
