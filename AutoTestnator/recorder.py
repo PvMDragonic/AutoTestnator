@@ -1,11 +1,13 @@
+from multiprocessing import Process
 from pynput import mouse, keyboard
+from webbrowser import open
 from PIL import ImageGrab
+from time import sleep
 
-import webbrowser, time
 import numpy as np
 import screeninfo
 import h5py
-
+    
 class Recorder():
     """
     Class responsible for recording the tests into a Test class compatible file.
@@ -17,7 +19,14 @@ class Recorder():
     steps = []
 
     @staticmethod
-    def record(url = None):
+    def _url_recording(url: str) -> None:
+        open(url)
+        sleep(3)
+        keyboard.Controller().tap(keyboard.Key.f11)
+        print("-> Recording started!")
+
+    @staticmethod
+    def record(url: str = None) -> None:
         def mouse_handler(x, y, button, pressed):
             if not Recorder.recording:
                 return
@@ -42,27 +51,41 @@ class Recorder():
             elif isinstance(key, keyboard.KeyCode):
                 Recorder.steps.append(['3', key.char, '-1'])
 
-        def start_recording(url):
+        def start_recording(url: str):
             if Recorder.recording:
                 Recorder.recording = False
                 Recorder.record_listener.stop()
                 return
 
             if url:
-                webbrowser.open(url)
-                time.sleep(1)
-                keyboard.Controller().tap(keyboard.Key.f11)
+                if not any(substr in url for substr in ['www', 'https']):
+                    url = f'www.{url}' 
 
+                # Something on pynput's listeners' join() doesn't like the "webbrowser.open()" or
+                # pynput's own "keyboard.Controller().tap()", making the Recorder.record_listener's
+                # join() break when it shouldn't.
+
+                # Doesn't happen on all machines and may have to do with some return value or another treadding/multiprocessing schenanigan.
+                # Calling "webbrowser.open()" and "keyboard.Controller().tap()" in another Process fixes things. 
+                Process(
+                    target = Recorder._url_recording, 
+                    args = (url, )
+                ).start()
+
+                # The F11 will be appended when the Process presses it and the keyboard listener catches it. 
                 Recorder.steps.append(['4', url, '-1'])
-                Recorder.steps.append(['3', 'f11', '-1'])
 
             Recorder.mouse_listener.start()
             Recorder.kb_listener.start()
             Recorder.recording = True
-            print("-> Recording started!")
+
+            if url:
+                print("-> Wait for the browser to open and go fullscreen...")
+            else:
+                print("-> Recording started!")
         
-        def cancel_recording():    
-            Recorder.recording = False 
+        def cancel_recording():     
+            Recorder.recording = False    
             Recorder.steps = []
             Recorder.record_listener.stop()
 
@@ -117,4 +140,5 @@ class Recorder():
                 f.create_dataset("steps", data = Recorder.steps)
                 f.create_dataset("validation", data = validation)
             
+            # Needs to be reset, since this static class never unloads and reloads.
             Recorder.steps = []
