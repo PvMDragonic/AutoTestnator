@@ -15,6 +15,7 @@ Mouse and keyboard recording and manipulation are handled by [pynput](https://py
     - Mouse left clicks;
     - Mouse middle clicks;
     - Mouse position when clicking;
+    - Mouse scroll distance;
     - Keyboard letters;
     - Keyboard keys.
 - Read test instructions from hdf5 files;

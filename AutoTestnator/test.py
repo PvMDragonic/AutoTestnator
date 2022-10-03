@@ -1,5 +1,6 @@
 import numpy as np
 import h5py
+import os
 
 class TestMeta(type):
     """
@@ -38,45 +39,39 @@ class Test(TestInterface):
     """
     Class which holds all the steps and validation for a given test.
     """  
-    def __init__(self, arqv: str) -> None:
-        def load_data(arqv: str) -> list:
-            def fix_list(hdf5: h5py._hl.dataset.Dataset) -> list:
-                lst = []
-                for arr in hdf5:
-                    if arr[0] == b'1':
-                        temp = []
-                        for elem in arr:
-                            temp.append(int(elem))
-                        lst.append(temp)
-                    elif arr[0] == b'2':
-                        temp = [int(arr[0]), int(arr[1])]
-                        lst.append(temp)
-                    elif arr[0] in (b'3', b'4'):
-                        temp = [int(arr[0]), str(arr[1], 'UTF-8')]
-                        lst.append(temp)
-                return lst
+    def __init__(self, file_name: str) -> None:
+        def fix_list(dataset: h5py._hl.dataset.Dataset) -> list:
+            """
+            Transforms the saved binary steps into the correct format for the Tester class.
+            """
+            return [
+                {
+                    b'1': lambda: [int(arr[0]), int(arr[1]), int(arr[2])],
+                    b'2': lambda: [int(arr[0]), int(arr[1])],
+                    b'3': lambda: [int(arr[0]), int(arr[1]), int(arr[2])],
+                    b'4': lambda: [int(arr[0]), str(arr[1], 'UTF-8')],
+                    b'5': lambda: [int(arr[0]), str(arr[1], 'UTF-8')]
+                }.get(arr[0])() for arr in dataset
+            ]
 
-            with h5py.File(arqv, 'r') as f:
-                try:
-                    return [
-                        list(f['size']), 
-                        fix_list(f['steps']), 
-                        np.array(f['validation'])
-                    ]
-                except Exception:
-                    return []
-
-        if (type(arqv) != str):
-            raise ValueError('Param must be a string that leads to a valid directory.')
+        if not os.path.exists(file_name):
+            raise TypeError('Invalid file name or path.')
         
-        data = load_data(arqv)
+        with h5py.File(file_name, 'r') as file:
+            try:
+                self.screen = list(file['size'])
+            except Exception:
+                self.screen = None
 
-        if len(data) != 3: 
-            raise ValueError('hdf5 file must contain 3 elements.')
-        
-        self.screen = data[0]
-        self.steps = data[1]
-        self.validation = data[2]
+            try:
+                self.steps = fix_list(file['steps'])
+            except Exception:
+                self.steps = None
+
+            try:
+                self.validation = np.array(file['validation'])
+            except Exception:
+                self.validation = None
 
     def __str__(self) -> str:
         return f"{self.screen}\n{self.steps}\n{self.validation}"
@@ -93,14 +88,16 @@ class Test(TestInterface):
         Shows the steps recorded into the test file.
         """
         print("\n")
-        for index, step in enumerate(self.steps):
-            if step[0] == 1:
-                print(f'{index + 1} - Move to x:{step[1]} y:{step[2]};')
-            elif step[0] == 2:
-                print(f'{index + 1} - {"Left" if step[1] == 1 else "Right"} click;')
-            elif step[0] == 3:
-                print(f'{index + 1} - Type "{step[1]}";')
-        print("\n")
+        for index, instruction in enumerate(self.steps):
+            {
+                1: lambda: print(f'{index + 1} - Move to x:{instruction[1]} y:{instruction[2]};'),
+                2: lambda: print(f'{index + 1} - {"Left" if instruction[1] == 1 else "Right"} click;'),
+                3: lambda: print(f'{index + 1} - Scroll {instruction[2]} {"up" if instruction[2] > 0 else "down"};'),
+                4: lambda: print(f'{index + 1} - Type "{instruction[1]}";'),
+                5: lambda: print(f'{index + 1} - Open URL "{instruction[1]}";')
+            }.get(
+                instruction[0]
+            )()
 
     def show_validation(self) -> None:
         """

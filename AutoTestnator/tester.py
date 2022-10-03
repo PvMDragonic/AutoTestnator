@@ -26,6 +26,11 @@ class Tester():
             Tester.mouse.position = (x, y)
             sleep(1)
 
+        def scroll_mouse(x: int, y: int, index) -> None:
+            Tester.mouse.move(50, 50)
+            Tester.mouse.scroll(x, y)
+            sleep(1)
+
         def click_mouse(button: int) -> None:
             if button == 1:
                 Tester.mouse.click(pynput.mouse.Button.left, 1)
@@ -49,23 +54,15 @@ class Tester():
             sleep(2)
 
         def validate_result(base_img: np.array) -> float:
-            def clear_screen():
-                if os.name == 'nt': # Windows
-                    os.system('cls') 
-                else:
-                    os.system('clear') # Linux/Mac
-
-            sleep(4)
-            clear_screen()
+            sleep(4) # Assumes you clicked 'submit' or something, so longer sleep to account for loading.
+            os.system("cls||clear")
             new_img = ImageGrab.grab()
             base_img = Image.fromarray(base_img)
             return compare_ssim(base_img, new_img)
 
         def invalid_screen_size(test_screen: list) -> bool:
             current_screen = screeninfo.get_monitors()[0]
-            if test_screen[0] == current_screen.width and test_screen[1] == current_screen.height:
-                return False
-            return True
+            return test_screen[0] != current_screen.width and test_screen[1] != current_screen.height
 
         if not isinstance(test, TestInterface):
             raise NotImplementedError("Given test does not implement the TestInterface interface.")
@@ -73,15 +70,16 @@ class Tester():
         if invalid_screen_size(test.screen):
             raise IncompatibleMonitor("Your monitor resolution is incompatible with the test's resolution.")
 
-        print('>> Test started.')
-        for instruction in test.steps:
-            if instruction[0] == 1:
-                move_mouse(instruction[1], instruction[2])
-            elif instruction[0] == 2:
-                click_mouse(instruction[1])
-            elif instruction[0] == 3:
-                type_keyboard(instruction[1])
-            elif instruction[0] == 4:
-                url_open(instruction[1])
+        print(">> Testing...")
+        for index, instruction in enumerate(test.steps):
+            {
+                1: lambda: move_mouse(instruction[1], instruction[2]),
+                2: lambda: click_mouse(instruction[1], index),
+                3: lambda: scroll_mouse(instruction[1], instruction[2], index),
+                4: lambda: type_keyboard(instruction[1], index),
+                5: lambda: url_open(instruction[1])
+            }.get(
+                instruction[0]
+            )()
 
         return validate_result(test.validation)

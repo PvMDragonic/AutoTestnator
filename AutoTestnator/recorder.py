@@ -27,7 +27,7 @@ class Recorder():
 
     @staticmethod
     def record(url: str = None) -> None:
-        def mouse_handler(x, y, button, pressed):
+        def mouse_click_handler(x, y, button, pressed):
             if not Recorder.recording:
                 return
 
@@ -42,14 +42,21 @@ class Recorder():
                 elif button == mouse.Button.middle:
                     Recorder.steps.append(['2', '3', '-1'])
 
+        def mouse_scroll_handler(x: int, y: int, dx: int, dy: int) -> None:
+            if not Recorder.recording:
+                return
+
+            # 'x' and 'y' are the pos where the scroll happened; 'dx' and 'dy' are how much was scrolled.
+            Recorder.steps.append(['3', str(dx), str(dy)])
+
         def keyboard_handler(key):
             if not Recorder.recording:
                 return
 
             if isinstance(key, keyboard.Key):
-                Recorder.steps.append(['3', key._name_, '-1'])
+                Recorder.steps.append(['4', key._name_, '-1'])
             elif isinstance(key, keyboard.KeyCode):
-                Recorder.steps.append(['3', key.char, '-1'])
+                Recorder.steps.append(['4', key.char, '-1'])
 
         def start_recording(url: str):
             if Recorder.recording:
@@ -57,7 +64,7 @@ class Recorder():
                 Recorder.record_listener.stop()
                 return
 
-            if url:
+            if url is not None:
                 if not any(substr in url for substr in ['www', 'https']):
                     url = f'www.{url}' 
 
@@ -66,14 +73,14 @@ class Recorder():
                 # join() break when it shouldn't.
 
                 # Doesn't happen on all machines and may have to do with some return value or another treadding/multiprocessing schenanigan.
-                # Calling "webbrowser.open()" and "keyboard.Controller().tap()" in another Process fixes things. 
+                # Calling "webbrowser.open()" and "keyboard.Controller().tap()" in another Process fixes things.
                 Process(
                     target = Recorder._url_recording, 
                     args = (url, )
                 ).start()
 
                 # The F11 will be appended when the Process presses it and the keyboard listener catches it. 
-                Recorder.steps.append(['4', url, '-1'])
+                Recorder.steps.append(['5', url, '-1'])
 
             Recorder.mouse_listener.start()
             Recorder.kb_listener.start()
@@ -95,7 +102,8 @@ class Recorder():
         print(">> 'Ctrl Alt R' to begin and finish the recording.\n")
 
         Recorder.mouse_listener = mouse.Listener(
-            on_click = mouse_handler
+            on_click = mouse_click_handler,
+            on_scroll = mouse_scroll_handler
         )
 
         Recorder.kb_listener = keyboard.Listener(
