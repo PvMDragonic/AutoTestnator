@@ -53,6 +53,27 @@ class Recorder():
             if not Recorder.recording:
                 return
 
+            # Numpad keys return numbers instead of an actual key.
+            if hasattr(key, 'vk') and 96 <= key.vk <= 111:
+                {
+                    96: lambda: Recorder.steps.append(['4', '0', '-1']),
+                    97: lambda: Recorder.steps.append(['4', '1', '-1']),
+                    98: lambda: Recorder.steps.append(['4', '2', '-1']),
+                    99: lambda: Recorder.steps.append(['4', '3', '-1']),
+                    100: lambda: Recorder.steps.append(['4', '4', '-1']),
+                    101: lambda: Recorder.steps.append(['4', '5', '-1']),
+                    102: lambda: Recorder.steps.append(['4', '6', '-1']),
+                    103: lambda: Recorder.steps.append(['4', '7', '-1']),
+                    104: lambda: Recorder.steps.append(['4', '8', '-1']),
+                    105: lambda: Recorder.steps.append(['4', '9', '-1']),
+                    106: lambda: Recorder.steps.append(['4', '*', '-1']),
+                    107: lambda: Recorder.steps.append(['4', '+', '-1']),
+                    109: lambda: Recorder.steps.append(['4', '-', '-1']),
+                    110: lambda: Recorder.steps.append(['4', ',', '-1']),
+                    111: lambda: Recorder.steps.append(['4', '/', '-1'])
+                }.get(key.vk)()
+                return
+
             if isinstance(key, keyboard.Key):
                 Recorder.steps.append(['4', key._name_, '-1'])
             elif isinstance(key, keyboard.KeyCode):
@@ -64,7 +85,7 @@ class Recorder():
                 Recorder.record_listener.stop()
                 return
 
-            if url is not None:
+            if url:
                 if not any(substr in url for substr in ['www', 'https']):
                     url = f'www.{url}' 
 
