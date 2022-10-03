@@ -2,7 +2,7 @@ from setuptools import setup
 
 settings = {
     "name": "AutoTestnator",
-    "version": "1.7",
+    "version": "1.8",
     "description": "A tool to automatically test and replicate such tests on demand for (any) websites.",
     "url": "https://github.com/PvMDragonic/AutoTestnator",
     "author": "João Pedro Droval",
@@ -14,7 +14,7 @@ settings = {
         "screeninfo>=0.8.1",
         "h5py>=3.7.0",
         "Pillow>=9.2.0",
-        "pynput>=1.7.6"
+        "pynput>=1.7.6",
     ],
     "packages": [
         "AutoTestnator"

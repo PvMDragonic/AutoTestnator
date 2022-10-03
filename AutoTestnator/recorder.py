@@ -107,7 +107,7 @@ class Recorder():
             Recorder.kb_listener.start()
             Recorder.recording = True
 
-            if url:
+            if url is not None:
                 print("-> Wait for the browser to open and go fullscreen...")
             else:
                 print("-> Recording started!")
@@ -116,6 +116,33 @@ class Recorder():
             Recorder.recording = False    
             Recorder.steps = []
             Recorder.record_listener.stop()
+
+        def clear_junk_instructions():
+            """
+            Clears the junk from the end of the steps list.
+            Some useless things get caught when you press the hotkey to end recording.
+            """
+            while Recorder.steps[-1][1] in ('f11', '7', 'alt_l', 'ctrl_l'):
+                del Recorder.steps[-1]
+        
+        def join_scrolls():
+            """
+            Puts all the individual scroll instructions into a single, big scroll.
+            Saves on run time, since the code waits a bit after each instruction.
+            """
+            while True:
+                continue_for = True
+                for i in range(len(Recorder.steps)):
+                    if not continue_for: 
+                        break
+                    if Recorder.steps[i][0] == '3': # '3' means Scroll.
+                        if Recorder.steps[i + 1][0] == '3':
+                            Recorder.steps[i][2] += Recorder.steps[i + 1][2]
+                            del Recorder.steps[i]
+                            continue_for = False
+                            continue
+                    if i == len(Recorder.steps) - 1:
+                        return
 
         print("\nAll your actions will be recorded for future replication.\n")
         print("Commands:")
@@ -141,10 +168,15 @@ class Recorder():
             lambda: start_recording(url)
         )
 
-        keyboard.Listener(
-            on_press=lambda k: hotkey1.press(Recorder.record_listener.canonical(k)),
-            on_release=lambda k: hotkey1.release(Recorder.record_listener.canonical(k))
-        ).start() 
+        try:
+            keyboard.Listener(
+                on_press=lambda k: hotkey1.press(Recorder.record_listener.canonical(k)),
+                on_release=lambda k: hotkey1.release(Recorder.record_listener.canonical(k))
+            ).start() 
+        except AttributeError:
+            # Sometimes give "'NoneType' object has no attribute 'canonical'" for no clear reason.
+            # Giving the error a pass doesnt seem to affect any functionality.
+            pass 
 
         with keyboard.Listener(
             on_press=lambda k: hotkey2.press(Recorder.record_listener.canonical(k)),
@@ -155,7 +187,13 @@ class Recorder():
         Recorder.mouse_listener.stop()
         Recorder.kb_listener.stop() 
 
+        if url:
+            keyboard.Controller().tap(keyboard.Key.f11)
+
         if Recorder.steps:
+            clear_junk_instructions()
+            join_scrolls()
+
             monitor = screeninfo.get_monitors()[0]
             size = [monitor.width, monitor.height, -1]
 
