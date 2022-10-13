@@ -81,10 +81,7 @@ def execution():
         #test.show_validation()
         result = Tester.execute(test)
         print(f">> Test similarity: {round(result, 2) * 100}%\n")
-        if result >= 0.90:
-            print(">> Test succeeded!")
-        else:
-            print(">> Test failed!")
+        print(">> Test succeeded!") if result >= 0.90 else print(">> Test failed!")
     except Exception as e:
         print(e)
 

@@ -2,7 +2,7 @@ from setuptools import setup
 
 settings = {
     "name": "AutoTestnator",
-    "version": "1.8",
+    "version": "2.0",
     "description": "A tool to automatically test and replicate such tests on demand for (any) websites.",
     "url": "https://github.com/PvMDragonic/AutoTestnator",
     "author": "João Pedro Droval",
@@ -15,6 +15,9 @@ settings = {
         "h5py>=3.7.0",
         "Pillow>=9.2.0",
         "pynput>=1.7.6",
+        "pytesseract>=0.3.10",
+        "opencv-python>=4.6.0.66",
+        "Unidecode>=1.3.6"
     ],
     "packages": [
         "AutoTestnator"

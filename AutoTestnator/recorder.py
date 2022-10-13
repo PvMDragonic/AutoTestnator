@@ -53,7 +53,7 @@ class Recorder():
             if not Recorder.recording:
                 return
 
-            # Numpad keys return numbers instead of an actual key.
+            # Numpad keys return numbers instead of actual keys.
             if hasattr(key, 'vk') and 96 <= key.vk <= 111:
                 {
                     96: lambda: Recorder.steps.append(['4', '0', '-1']),
