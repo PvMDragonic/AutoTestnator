@@ -94,7 +94,7 @@ class Recorder():
                 # join() break when it shouldn't.
 
                 # Doesn't happen on all machines and may have to do with some return value or another treadding/multiprocessing schenanigan.
-                # Calling "webbrowser.open()" and "keyboard.Controller().tap()" in another Process fixes things.
+                # Calling "webbrowser.open()" and "keyboard.Controller().tap()" in another Process fixes things. 
                 Process(
                     target = Recorder._url_recording, 
                     args = (url, )

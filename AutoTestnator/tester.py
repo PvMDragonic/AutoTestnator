@@ -3,6 +3,7 @@ from .test import Test, TestInterface
 from SSIM_PIL import compare_ssim
 from PIL import ImageGrab, Image
 from unidecode import unidecode
+from threading import Thread
 from ctypes import windll
 from time import sleep
 
@@ -11,13 +12,68 @@ import numpy as np
 import screeninfo
 import webbrowser
 import pynput
+import json
 import cv2
 import os
 
-# Looks for the Tesseract-OCR folder on the same folder as Tester.py.
-dirname = os.path.dirname(__file__)
-filepath = os.path.join(dirname, r'Tesseract-OCR\tesseract.exe')
-pytesseract.pytesseract.tesseract_cmd = filepath
+def find_tesseract():
+    def save_found_location(dump, path):
+        with open(r"AutoTestnator\config.json", "w") as f:
+            dump[0] = path
+            json.dump(dump, f)
+
+    def find_all(result, name, path):
+        for root, dirs, files in os.walk(path):
+            if name in files:
+                result.append(os.path.join(root, name))
+                return
+
+    result = []
+
+    # Checks to see if there's a saved Tesseract install location and if it's valid.
+    with open(r"AutoTestnator\config.json", "r") as f:
+        dump = json.loads(f.read())
+        filepath = dump[0]
+
+        if filepath != "":
+            filepath = filepath[:-15] # Should remove "\\tesseract.exe" from the string.
+            find_all(result, "tesseract.exe", filepath)
+
+            if result != []:
+                save_found_location(dump, result[0])
+                return result[0]
+
+    # Will look for it on the C:/ Drive, as it's the default location.
+    t1 = Thread(
+        target = find_all, 
+        args = (
+            result, 
+            "tesseract.exe", 
+            "C:"
+        )
+    )
+
+    # Looks for it on the drive where this code's files are.
+    t2 = Thread(
+        target = find_all, 
+        args = (
+            result, 
+            "tesseract.exe", 
+            f"{os.path.dirname(__file__).split(':')[0].capitalize()}:"
+        )
+    )
+
+    t1.start(); t2.start()
+    t1.join(); t2.join()
+
+    if result != []:
+        save_found_location(dump, result[0])
+        return result[0]
+    
+    # Didn't find anything.
+    raise pytesseract.pytesseract.TesseractNotFoundError()
+
+pytesseract.pytesseract.tesseract_cmd = find_tesseract()
 
 class IncompatibleMonitor(Exception):
     pass
@@ -29,7 +85,7 @@ class Validation():
     """
     Class responsible for holding the individual input field validation data.
     """
-    def __init__(self, x: int, y: int):
+    def __init__(self, x: int, y: int, language: str):
         self.image = ImageGrab.grab(
             bbox = (
                 x - 200, y - 75, 
@@ -49,8 +105,8 @@ class Validation():
         self.text = unidecode(
             pytesseract.image_to_string(
                 self.img_cv, 
-                lang='eng', 
-                config='--psm 6'
+                lang = language, 
+                config = '--psm 6'
             )
         ).lower()
         self.x = x
@@ -64,6 +120,11 @@ class Tester():
     keyboard = pynput.keyboard.Controller()
     last_click = None
 
+    with open(r"AutoTestnator\config.json", "r") as f:
+        _dump = json.loads(f.read())
+        error_words = _dump[2]
+        language = _dump[1]
+
     @staticmethod
     def execute(test: Test) -> float:
         def invalid_screen_size(test_screen: list) -> bool:
@@ -76,12 +137,12 @@ class Tester():
 
             new_img = ImageGrab.grab()
             base_img = Image.fromarray(base_img)
-            return compare_ssim(base_img, new_img)
+            return compare_ssim(base_img, new_img)         
+
+        def validate_input_field(message: str) -> bool:
+            return any(substr in message for substr in Tester.error_words)
         
         def execute_instructions(test: Test) -> None:
-            def validate_input_field(mensagem: str) -> bool:
-                return any(substr in mensagem for substr in ['err', 'invalid', 'incorr', 'obrigat'])
-
             def move_mouse(x: int, y: int) -> None:
                 Tester.mouse.position = (x, y)
                 sleep(1)
@@ -104,7 +165,8 @@ class Tester():
                     if Tester.last_click is not None:
                         current_state = Validation(
                             Tester.last_click.x,
-                            Tester.last_click.y)
+                            Tester.last_click.y,
+                            Tester.language)
                         
                         # This is here in case some drop-down menu fails/doesn't appears/something/etc. 
                         if validate_input_field(current_state.text):
@@ -118,7 +180,8 @@ class Tester():
                     # Saves the click position to validate it next time a click occurs.
                     Tester.last_click = Validation(
                         test.steps[index - 1][1],
-                        test.steps[index - 1][2])
+                        test.steps[index - 1][2],
+                        Tester.language)
                 sleep(1)
 
             def type_keyboard(key: str, index: int) -> None:
@@ -143,7 +206,8 @@ class Tester():
                     sleep(0.25)
                     current_state = Validation(
                         Tester.last_click.x, 
-                        Tester.last_click.y)
+                        Tester.last_click.y, 
+                        Tester.language)
                     Tester.last_click = None
 
                     if validate_input_field(current_state.text):
@@ -162,19 +226,19 @@ class Tester():
 
             # Minimizes the console window.
             windll.user32.ShowWindow(windll.kernel32.GetConsoleWindow(), 6)
-
+        
             print(">> Testing...")
             for index, instruction in enumerate(test.steps):
                 {
                     1: lambda: move_mouse(instruction[1], instruction[2]),
                     2: lambda: click_mouse(instruction[1], index),
-                    3: lambda: scroll_mouse(instruction[1], instruction[2], index),
+                    3: lambda: scroll_mouse(instruction[1], instruction[2]),
                     4: lambda: type_keyboard(instruction[1], index),
                     5: lambda: url_open(instruction[1])
                 }.get(
                     instruction[0]
                 )()
-
+            
             # Brings the console back front.
             windll.user32.ShowWindow(windll.kernel32.GetConsoleWindow(), 1)
 
@@ -185,4 +249,4 @@ class Tester():
             raise IncompatibleMonitor("Your monitor resolution is incompatible with the test's resolution.")
 
         execute_instructions(test)
-        return validate_result(test.validation)   
+        return validate_result(test.validation)

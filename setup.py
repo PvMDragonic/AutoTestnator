@@ -2,7 +2,7 @@ from setuptools import setup
 
 settings = {
     "name": "AutoTestnator",
-    "version": "2.0",
+    "version": "2.1",
     "description": "A tool to automatically test and replicate such tests on demand for (any) websites.",
     "url": "https://github.com/PvMDragonic/AutoTestnator",
     "author": "João Pedro Droval",
